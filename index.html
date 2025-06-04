@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Daily Батырлар</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #fff8e1; color: #333; margin: 0; padding: 20px; text-align: center; }
+  .container { max-width: 600px; margin: auto; background: #fff3cd; border-radius: 20px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+  h1 { color: #d32f2f; }
+  .question { font-size: 1.2em; margin: 20px 0; }
+  .answers button { display: block; margin: 10px auto; padding: 10px 20px; font-size: 1em; background: #fdd835; border: none; border-radius: 10px; cursor: pointer; }
+  .answers button:hover { background: #fbc02d; }
+  .result { font-size: 1.3em; margin-top: 20px; color: green; }
+  .hidden { display: none; }
+  #timer { font-weight: bold; font-size: 1.5em; margin: 10px; color: #d32f2f;}
+  #phoneInput { padding: 10px; font-size: 1em; width: 80%; margin-bottom: 10px; }
+  #startBtn { padding: 10px 20px; font-size: 1em; background: #d32f2f; color: white; border: none; border-radius: 10px; cursor: pointer; }
+  #startBtn:hover { background: #b71c1c; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Daily Батырлар</h1>
+    
+    <div id="languageSelect">
+      <p>Выберите язык / Тілді таңдаңыз:</p>
+      <button onclick="startGame('ru')">Русский</button>
+      <button onclick="startGame('kz')">Қазақша</button>
+    </div>
+    
+    <div id="phoneSection" class="hidden">
+      <p id="phonePrompt"></p>
+      <input type="text" id="phoneInput" placeholder="Введите номер телефона" />
+      <button id="startBtn" onclick="checkPhone()">Начать игру</button>
+      <p id="phoneError" style="color:red;"></p>
+    </div>
+    
+    <div id="quiz" class="hidden">
+      <div id="timer">15</div>
+      <div class="question"></div>
+      <div class="answers"></div>
+    </div>
+    
+    <div id="result" class="result hidden"></div>
+  </div>
+
+<script>
+const questions_ru = [
+  {q: "Кто был известен как 'Железный батыр'?", options: ["Абылай хан", "Райымбек батыр", "Ер Тостик", "Алпамыс батыр"], answer: "Алпамыс батыр"},
+  {q: "Что входит в акцию '1+1=3' в Daily Food?", options: ["3 донера", "3 пиццы", "3 колы", "3 мороженых"], answer: "3 пиццы"},
+  {q: "Кто сказал: 'Халық үшін еңбек ету — басты парыз'?", options: ["Абылай хан", "Толе би", "Жамбыл", "Абай"], answer: "Абай"},
+  {q: "Где можно бесплатно получить мороженое после викторины?", options: ["Daily Market", "Daily Pizza", "Daily Food", "На базаре"], answer: "Daily Food"},
+  {q: "Что любил батыр больше всего?", options: ["Битву", "Покой", "Мороженое от Daily Food", "Читать стихи"], answer: "Мороженое от Daily Food"},
+  {q: "Кто из этих не является казахским батыром?", options: ["Алпамыс", "Толе би", "Чак Норрис", "Казыбек би"], answer: "Чак Норрис"},
+  {q: "Какая национальная кухня представлена в Daily Food?", options: ["Итальянская", "Казахская", "Мексиканская", "Французская"], answer: "Казахская"},
+  {q: "Что означает слово 'батыр'?", options: ["Герой", "Враг", "Дружина", "Король"], answer: "Герой"},
+  {q: "Какой напиток есть безлимитно в Daily Food при покупке комбо?", options: ["Кола", "Вода", "Чай", "Кофе"], answer: "Кола"},
+  {q: "Что дарят за покупку 2 пицц в акции '1+1=3'?", options: ["Пиццу Маргарита", "Мороженое", "Кока-колу", "Фри"], answer: "Пиццу Маргарита"}
+];
+
+const questions_kz = [
+  {q: "Кім 'Темір батыр' деп танылды?", options: ["Әбіләй хан", "Райымбек батыр", "Ер Төстік", "Алпамыс батыр"], answer: "Алпамыс батыр"},
+  {q: "'1+1=3' акциясына не кіреді?", options: ["3 донер", "3 пицца", "3 кола", "3 балмұздақ"], answer: "3 пицца"},
+  {q: "'Халық үшін еңбек ету — басты парыз' деген кім айтты?", options: ["Әбіләй хан", "Төле би", "Жамбыл", "Абай"], answer: "Абай"},
+  {q: "Викторинадан кейін балмұздақ қайда тегін алуға болады?", options: ["Daily Market", "Daily Pizza", "Daily Food", "Базарда"], answer: "Daily Food"},
+  {q: "Батыр ең көп нені жақсы көрді?", options: ["Жекпе-жек", "Тыныштық", "Daily Food балмұздағы", "Өлең оқу"], answer: "Daily Food балмұздағы"},
+  {q: "Төмендегі кім қазақ батыры емес?", options: ["Алпамыс", "Төле би", "Чак Норрис", "Қазыбек би"], answer: "Чак Норрис"},
+  {q: "Daily Food-та қандай ұлттық тағамдар бар?", options: ["Итальян", "Қазақ", "Мексикалық", "Француз"], answer: "Қазақ"},
+  {q: "'Батыр' сөзінің мағынасы не?", options: ["Батыр", "Жау", "Дружина", "Патша"], answer: "Батыр"},
+  {q: "Daily Food-та комбо алған кезде қай сусынды шексіз ішуге болады?", options: ["Кола", "Су", "Шай", "Кофе"], answer: "Кола"},
+  {q: "'1+1=3' акциясында 2 пицца сатып алғанда не сыйланады?", options: ["Маргарита пиццасы", "Балмұздақ", "Кока-кола", "Қайнатпа"], answer: "Маргарита пиццасы"}
+];
+
+let questions = [];
+let lang = 'ru';
+let currentQ = 0;
+let score = 0;
+let timer;
+let timeLeft = 15;
+
+function startGame(selectedLang) {
+  lang = selectedLang;
+  questions = lang === 'ru' ? [...questions_ru] : [...questions_kz];
+  shuffleArray(questions);
+  questions = questions.slice(0, 10);
+  
+  document.getElementById('languageSelect').classList.add('hidden');
+  document.getElementById('phoneSection').classList.remove('hidden');
+  document.getElementById('phonePrompt').innerText = lang === 'ru' ? 'Введите номер телефона (1 раз в день можно играть):' : 'Телефон нөмірін енгізіңіз (күніне бір рет ойнауға болады):';
+}
+
+function checkPhone() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const errorEl = document.getElementById('phoneError');
+  if (!phone.match(/^\\+?\\d{10,15}$/)) {
+    errorEl.innerText = lang === 'ru' ? 'Введите корректный номер телефона с кодом страны' : 'Ел коды бар дұрыс телефон нөмірін енгізіңіз';
+    return;
+  }
+  
+  // Проверяем дату последней игры в localStorage
+  const lastPlayedKey = `dailybatyrlar_${phone}`;
+  const lastPlayed = localStorage.getItem(lastPlayedKey);
+  const now = new Date();
+  if (lastPlayed) {
+    const lastDate = new Date(lastPlayed);
+    if (now.toDateString() === lastDate.toDateString()) {
+      errorEl.innerText = lang === 'ru' ? 'Вы уже играли сегодня. Приходите завтра!' : 'Сіз бүгін ойнадыңыз. Ертең келіңіз!';
+      return;
+    }
+  }
+  
+  // Сохраняем дату игры
+  localStorage.setItem(lastPlayedKey, now.toISOString());
+  errorEl.innerText = '';
+  document.getElementById('phoneSection').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+  currentQ = 0;
+  score = 0;
+  showQuestion();
+  startTimer();
+}
+
+function showQuestion() {
+  if (currentQ >= questions.length) {
+    showResult();
+    return;
+  }
+  timeLeft = 15;
+  document.getElementById('timer').innerText = timeLeft;
+  const q = questions[currentQ];
+  document.querySelector('.question').innerText = q.q;
+  const answersDiv = document.querySelector('.answers');
+  answersDiv.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.innerText = opt;
+    btn.onclick = () => answerQuestion(opt);
+    answersDiv.appendChild(btn);
+  });
+}
+
+function answerQuestion(selected) {
+  const correct = questions[currentQ].answer;
+  if (selected === correct) {
+    score++;
+  }
+  currentQ++;
+  resetTimer();
+  showQuestion();
+}
+
+function showResult() {
+  document.getElementById('quiz').classList.add('hidden');
+  const resultDiv = document.getElementById('result');
+  if (score === questions.length) {
+    resultDiv.innerHTML = lang === 'ru'
+      ? `<p>Поздравляем! Вы ответили правильно на все вопросы!</p><p>Покажите этот экран кассиру, чтобы получить бесплатное мороженое.</p>`
+      : `<p>Құттықтаймыз! Сіз барлық сұрақтарға дұрыс жауап бердіңіз!</p><p>Тегін балмұздақты алу үшін осы экранды кассирге көрсетіңіз.</p>`;
+  } else {
+    resultDiv.innerHTML = lang === 'ru'
+      ? `<p>Вы ответили правильно на ${score} из ${questions.length} вопросов.</p><p>Попробуйте снова завтра!</p>`
+      : `<p>Сіз ${questions.length}-ден ${score} сұраққа дұрыс жауап бердіңіз.</p><p>Келесі күні қайта оралыңыз!</p>`;
+  }
+  resultDiv.classList.remove('hidden');
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function startTimer() {
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timer').innerText = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      currentQ++;
+      showQuestion();
+      startTimer();
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  clearInterval(timer);
+  startTimer();
+}
+</script>
+</body>
+</html>
